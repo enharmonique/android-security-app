@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="#3e5f85"
     android:padding="10dp"
-    tools:context=".MainActivity">
+    tools:context=".RegisterActivity">
 
     <EditText
         android:id="@+id/usernameInput"
@@ -24,7 +24,7 @@
         android:id="@+id/passwordInput"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/loginButton"
+        android:layout_above="@+id/registerButton"
         android:layout_marginBottom="16dp"
         android:background="#dbf2ff"
         android:hint="Password"
@@ -32,21 +32,21 @@
         android:textSize="24sp" />
 
     <Button
-        android:id="@+id/loginButton"
+        android:id="@+id/registerButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
         android:backgroundTint="#dea01e"
-        android:text="Login"
+        android:text="Register"
         android:textSize="24sp" />
 
     <TextView
-        android:id="@+id/registerText"
+        android:id="@+id/loginText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/loginButton"
+        android:layout_below="@+id/registerButton"
         android:layout_marginTop="16dp"
-        android:text="No account? Register here..."
+        android:text="Already have an account? Login here..."
         android:textColor="#003153"
         android:textSize="24sp" />
 
