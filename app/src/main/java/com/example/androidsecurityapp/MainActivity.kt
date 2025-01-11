@@ -15,6 +15,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
+    // Regex for usernames: 3-15 characters, letters, numbers, underscores
+    private val USERNAME_PATTERN = Regex("^[a-zA-Z0-9_]{3,15}$")
+
+    // Regex for passwords: at least 8 characters, one uppercase, one lowercase, one digit, one special character
+    private val PASSWORD_PATTERN =
+        Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@\$!%*?&])[A-Za-z\\d@\$!%*?&]{8,}$")
+
     private lateinit var binding: ActivityMainBinding
     private lateinit var dbHelper: DatabaseHelper
 
@@ -44,15 +51,28 @@ class MainActivity : AppCompatActivity() {
                 val username = usernameInput.text.toString().trim()
                 val password = passwordInput.text.toString().trim()
 
-                // Validate input fields
+                // Validate username
                 if (username.isEmpty()) {
                     usernameInput.error = "Username is required"
                     usernameInput.requestFocus()
                     return@setOnClickListener
                 }
+                if (!isValidUsername(username)) {
+                    usernameInput.error =
+                        "Username must be 3-15 characters and contain only letters, numbers, or underscores"
+                    usernameInput.requestFocus()
+                    return@setOnClickListener
+                }
 
+                // Validate password fields
                 if (password.isEmpty()) {
                     passwordInput.error = "Password is required"
+                    passwordInput.requestFocus()
+                    return@setOnClickListener
+                }
+                if (!isValidPassword(password)) {
+                    passwordInput.error =
+                        "Password must be at least 8 characters and include uppercase, lowercase, number, and special character"
                     passwordInput.requestFocus()
                     return@setOnClickListener
                 }
@@ -100,5 +120,13 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun isValidUsername(username: String): Boolean {
+        return USERNAME_PATTERN.matches(username)
+    }
+
+    private fun isValidPassword(password: String): Boolean {
+        return PASSWORD_PATTERN.matches(password)
     }
 }

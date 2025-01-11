@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#3e5f85"
-    android:padding="10dp"
+    android:padding="20dp"
     tools:context=".RegisterActivity">
 
     <EditText
@@ -47,7 +47,7 @@
         android:layout_below="@+id/registerButton"
         android:layout_marginTop="16dp"
         android:text="Already have an account? Login here..."
-        android:textColor="#003153"
+        android:textColor="#dbf2ff"
         android:textSize="24sp" />
 
 </RelativeLayout>

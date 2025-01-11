@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#3e5f85"
-    android:padding="10dp"
+    android:padding="20dp"
     tools:context=".MainActivity">
 
     <EditText
@@ -17,6 +17,8 @@
         android:layout_marginBottom="16dp"
         android:background="#dbf2ff"
         android:hint="Username"
+        android:inputType="textPersonName"
+        android:maxLength="15"
         android:padding="5dp"
         android:textSize="24sp" />
 
@@ -28,6 +30,8 @@
         android:layout_marginBottom="16dp"
         android:background="#dbf2ff"
         android:hint="Password"
+        android:inputType="textPassword"
+        android:maxLength="20"
         android:padding="5dp"
         android:textSize="24sp" />
 
@@ -47,7 +51,7 @@
         android:layout_below="@+id/loginButton"
         android:layout_marginTop="16dp"
         android:text="No account? Register here..."
-        android:textColor="#003153"
+        android:textColor="#dbf2ff"
         android:textSize="24sp" />
 
 </RelativeLayout>
