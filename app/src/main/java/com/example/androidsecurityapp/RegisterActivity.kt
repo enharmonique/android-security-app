@@ -1,6 +1,5 @@
 package com.example.androidsecurityapp
 
-import DatabaseHelper
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -10,6 +9,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.androidsecurityapp.data.api.RetrofitInstance
+import com.example.androidsecurityapp.data.requests.RegisterRequest
+import com.example.androidsecurityapp.data.responses.ApiResponse
 import com.example.androidsecurityapp.databinding.ActivityRegisterBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,8 +19,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class RegisterActivity : AppCompatActivity() {
+    // Regex for usernames: 3-15 characters, letters, numbers, underscores
+    private val USERNAME_PATTERN = Regex("^[a-zA-Z0-9_]{3,15}$")
+
+    // Regex for passwords: at least 8 characters, one uppercase, one lowercase, one digit, one special character
+    private val PASSWORD_PATTERN =
+        Regex("^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}\$")
+
     private lateinit var binding: ActivityRegisterBinding
-    private lateinit var dbHelper: DatabaseHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,9 +34,6 @@ class RegisterActivity : AppCompatActivity() {
 
         binding = ActivityRegisterBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        // Initialize DatabaseHelper
-        dbHelper = DatabaseHelper.getInstance(this)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -46,12 +51,19 @@ class RegisterActivity : AppCompatActivity() {
             val username = usernameInput.text.toString().trim()
             val password = passwordInput.text.toString().trim()
 
-            // Validate input fields
             if (username.isEmpty()) {
                 usernameInput.error = "Username is required"
                 usernameInput.requestFocus()
                 return@setOnClickListener
             }
+
+            if (!isValidUsername(username)) {
+                usernameInput.error =
+                    "Username must be 3-15 characters and contain only letters, numbers, or underscores"
+                usernameInput.requestFocus()
+                return@setOnClickListener
+            }
+
 
             if (password.isEmpty()) {
                 passwordInput.error = "Password is required"
@@ -59,9 +71,9 @@ class RegisterActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // Enforce password strength
-            if (password.length < 6) {
-                passwordInput.error = "Password must be at least 6 characters"
+            if (!isValidPassword(password)) {
+                passwordInput.error =
+                    "Password must be at least 8 characters and include uppercase, lowercase, number, and special character"
                 passwordInput.requestFocus()
                 return@setOnClickListener
             }
@@ -82,45 +94,50 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     /**
-     * Handles the registration process by adding a new user to the database.
+     * Handles the registration process by sending user details to the backend API.
      *
      * @param username The username entered by the user.
      * @param password The password entered by the user.
      */
     private fun performRegistration(username: String, password: String) {
+        binding.progressBar.visibility = View.VISIBLE
+        binding.registerButton.isEnabled = false
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Attempt to add the user to the database
-                val userId = dbHelper.addUser(
-                    username,
-                    password
-                )
+                val registerRequest = RegisterRequest(username, password)
+                val response = RetrofitInstance.api.registerUser(registerRequest)
 
                 withContext(Dispatchers.Main) {
-                    if (userId != -1L) {
-                        // Registration successful
+                    // Hide loading indicator
+                    binding.progressBar.visibility = View.GONE
+                    binding.registerButton.isEnabled = true
+
+                    if (response.isSuccessful && response.body() != null) {
+                        val apiResponse: ApiResponse = response.body()!!
                         Toast.makeText(
                             this@RegisterActivity,
-                            "Registration successful! Please login.",
+                            apiResponse.message,
                             Toast.LENGTH_SHORT
                         ).show()
 
-                        // Navigate to MainActivity (Login screen)
+                        // Navigate back to MainActivity (Login screen)
                         val intent = Intent(this@RegisterActivity, MainActivity::class.java)
                         startActivity(intent)
-                        finish() // Close RegisterActivity
+                        finish()
                     } else {
-                        // Registration failed (likely due to duplicate username)
-                        Toast.makeText(
-                            this@RegisterActivity,
-                            "Username already exists. Please choose another.",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        // Handle registration failure
+                        val errorMessage = response.errorBody()?.string() ?: "Registration failed."
+                        Toast.makeText(this@RegisterActivity, errorMessage, Toast.LENGTH_SHORT)
+                            .show()
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    // Handle exceptions (e.g., database errors)
+                    // Hide loading indicator
+                    binding.progressBar.visibility = View.GONE
+                    binding.registerButton.isEnabled = true
+
                     e.printStackTrace()
                     Toast.makeText(
                         this@RegisterActivity,
@@ -149,5 +166,14 @@ class RegisterActivity : AppCompatActivity() {
      */
     private fun enableEdgeToEdge() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
+    }
+
+
+    private fun isValidUsername(username: String): Boolean {
+        return USERNAME_PATTERN.matches(username)
+    }
+
+    private fun isValidPassword(password: String): Boolean {
+        return PASSWORD_PATTERN.matches(password)
     }
 }

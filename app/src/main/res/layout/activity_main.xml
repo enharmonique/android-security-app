@@ -54,4 +54,13 @@
         android:textColor="#dbf2ff"
         android:textSize="24sp" />
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="128dp"
+        android:layout_height="128dp"
+        android:layout_below="@+id/registerText"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:visibility="gone" />
+
 </RelativeLayout>

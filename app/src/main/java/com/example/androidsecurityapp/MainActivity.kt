@@ -1,38 +1,33 @@
 package com.example.androidsecurityapp
 
-import DatabaseHelper
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.androidsecurityapp.data.api.RetrofitInstance
+import com.example.androidsecurityapp.data.requests.LoginRequest
+import com.example.androidsecurityapp.data.responses.AuthResponse
 import com.example.androidsecurityapp.databinding.ActivityMainBinding
+import com.example.androidsecurityapp.utils.TokenManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
-    // Regex for usernames: 3-15 characters, letters, numbers, underscores
-    private val USERNAME_PATTERN = Regex("^[a-zA-Z0-9_]{3,15}$")
-
-    // Regex for passwords: at least 8 characters, one uppercase, one lowercase, one digit, one special character
-    private val PASSWORD_PATTERN =
-        Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@\$!%*?&])[A-Za-z\\d@\$!%*?&]{8,}$")
-
     private lateinit var binding: ActivityMainBinding
-    private lateinit var dbHelper: DatabaseHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        // Initialize DatabaseHelper
-        dbHelper = DatabaseHelper.getInstance(this)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -51,31 +46,20 @@ class MainActivity : AppCompatActivity() {
                 val username = usernameInput.text.toString().trim()
                 val password = passwordInput.text.toString().trim()
 
-                // Validate username
                 if (username.isEmpty()) {
                     usernameInput.error = "Username is required"
                     usernameInput.requestFocus()
                     return@setOnClickListener
                 }
-                if (!isValidUsername(username)) {
-                    usernameInput.error =
-                        "Username must be 3-15 characters and contain only letters, numbers, or underscores"
-                    usernameInput.requestFocus()
-                    return@setOnClickListener
-                }
 
-                // Validate password fields
                 if (password.isEmpty()) {
                     passwordInput.error = "Password is required"
                     passwordInput.requestFocus()
                     return@setOnClickListener
                 }
-                if (!isValidPassword(password)) {
-                    passwordInput.error =
-                        "Password must be at least 8 characters and include uppercase, lowercase, number, and special character"
-                    passwordInput.requestFocus()
-                    return@setOnClickListener
-                }
+
+                // Hide keyboard
+                hideKeyboard()
 
                 // Perform login operation
                 performLogin(username, password)
@@ -89,32 +73,56 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Handles the login process by validating credentials against the database.
+     * Handles the login process by sending credentials to the backend API.
      *
      * @param username The username entered by the user.
      * @param password The password entered by the user.
      */
     private fun performLogin(username: String, password: String) {
+        binding.progressBar.visibility = View.VISIBLE
+        binding.loginButton.isEnabled = false
+
         CoroutineScope(Dispatchers.IO).launch {
-            val isValid = dbHelper.checkLogin(username, password)
+            try {
+                val response = RetrofitInstance.api.loginUser(LoginRequest(username, password))
 
-            withContext(Dispatchers.Main) {
-                if (isValid) {
-                    // Login successful
-                    Toast.makeText(this@MainActivity, "Login successful!", Toast.LENGTH_SHORT)
-                        .show()
+                withContext(Dispatchers.Main) {
+                    // Hide loading indicator
+                    binding.progressBar.visibility = View.GONE
+                    binding.loginButton.isEnabled = true
 
-                    // Navigate to the HomeActivity
-                    val intent = Intent(this@MainActivity, HomeActivity::class.java)
-                    // Pass user information to the next activity
-                    intent.putExtra("USERNAME", username)
-                    startActivity(intent)
-                    finish() // Close the MainActivity so user can't return to it via back button
-                } else {
-                    // Login failed
+                    if (response.isSuccessful && response.body() != null) {
+                        val authResponse: AuthResponse = response.body()!!
+                        val token = authResponse.token
+
+                        // Save the JWT token securely
+                        TokenManager.saveToken(this@MainActivity, token)
+
+                        Toast.makeText(this@MainActivity, "Login successful!", Toast.LENGTH_SHORT)
+                            .show()
+
+                        // Navigate to HomeActivity
+                        val intent = Intent(this@MainActivity, HomeActivity::class.java)
+                        // Pass user information to the next activity
+                        intent.putExtra("USERNAME", username)
+                        startActivity(intent)
+                        finish()
+                    } else {
+                        // Handle login failure
+                        val errorMessage = response.errorBody()?.string() ?: "Login failed."
+                        Toast.makeText(this@MainActivity, errorMessage, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    // Hide loading indicator
+                    binding.progressBar.visibility = View.GONE
+                    binding.loginButton.isEnabled = true
+
+                    e.printStackTrace()
                     Toast.makeText(
                         this@MainActivity,
-                        "Invalid username or password.",
+                        "An error occurred. Please try again.",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -122,11 +130,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun isValidUsername(username: String): Boolean {
-        return USERNAME_PATTERN.matches(username)
+    /**
+     * Hides the keyboard from the screen.
+     */
+    private fun hideKeyboard() {
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        var view = currentFocus
+        if (view == null) {
+            view = View(this)
+        }
+        imm.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
-    private fun isValidPassword(password: String): Boolean {
-        return PASSWORD_PATTERN.matches(password)
+    /**
+     * Enables edge-to-edge UI for a modern, immersive experience.
+     */
+    private fun enableEdgeToEdge() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
     }
 }
