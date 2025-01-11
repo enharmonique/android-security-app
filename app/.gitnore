@@ -1,0 +1,81 @@
+# **Gradle**
+.gradle/
+build/
+!gradle-wrapper.jar
+
+# **Local configuration file (sdk path, etc)**
+local.properties
+
+# **Generated Files**
+/app/build/
+/*/build/
+/captures/
+/.externalNativeBuild/
+
+# **IntelliJ IDEA / Android Studio**
+*.iml
+*.ipr
+*.iws
+.idea/
+.DS_Store
+*.swp
+*~
+*.swo
+
+# **Kotlin-specific**
+*.kotlin_module
+
+# **Log Files**
+*.log
+
+# **Proguard**
+proguard/
+
+# **Android Specific Files**
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+
+# **NUnit**
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+# **Coverage Reports**
+coverage/
+*.lcov
+
+# **Others**
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# **Keystore Files**
+*.jks
+*.keystore
+
+# **Firebase Crashlytics**
+crashlytics-build.properties
+
+# **Mac OS Specific Files**
+.DS_Store
+
+# **Windows Specific Files**
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# **Node Modules (if using Node for any scripts)**
+node_modules/
+
+# **Optional: Exclude specific environment files**
+.env
+
+# **Optional: Exclude any other sensitive files**
+# secret_config.json
